@@ -34,12 +34,12 @@ curl -X POST http://localhost:8081/api/v1/calculate -H "Content-Type:application
 
 7. Чтобы получить все выражения, используйте в отдельном терминале команду:
 ```
-curl -X http://localhost:8081/api/v1/expressions
+curl -X POST http://localhost:8081/api/v1/expressions
 ```
 
 8. Чтобы получить выражение по его ID, используйте команду (вместо id_0 можно вписать любой из имеющихся ID):
 ```
-curl -X http://localhost:8081/api/v1/expression/id_0
+curl -X POST http://localhost:8081/api/v1/expression/id_0
 ```
 
 ## Принцип работы
