@@ -42,6 +42,22 @@ curl -X POST http://localhost:8081/api/v1/expressions
 curl -X POST http://localhost:8081/api/v1/expression/id_0
 ```
 
+## Примеры
+```
+curl -X POST http://localhost:8081/api/v1/calculate -H "Content-Type:application/json" -d "{\"expression\":\"1+2+(3+4+(5+6))\"}"
+```
+Ответ: 21
+
+```
+curl -X POST http://localhost:8081/api/v1/calculate -H "Content-Type:application/json" -d "{\"expression\":\"2+3/0\"}"
+```
+Ответ: деление на ноль
+
+```
+curl -X POST http://localhost:8081/api/v1/calculate -H "Content-Type:application/json" -d "{\"expression\":\"2++3-4\"}"
+```
+Ответ: некорректное выражение
+
 ## Принцип работы
 
 В калькуляторе взаимодействуют пользователь, оркестратор и агент.
