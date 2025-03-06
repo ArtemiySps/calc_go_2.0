@@ -61,7 +61,7 @@ func OrkestratorHandler(w http.ResponseWriter, r *http.Request) {
 
 // хендлер, выдающий таск агенту
 func GiveTaskHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(task_stack.Tasks)
+	// fmt.Println(task_stack.Tasks)
 	if len(task_stack.Tasks) != 0 {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(task_stack.Tasks[0])

@@ -2,7 +2,6 @@ package orkestrator
 
 import (
 	"errors"
-	"fmt"
 	"strconv"
 	"strings"
 	"unicode"
@@ -11,41 +10,6 @@ import (
 // создаем новый Storage для выражений и задач
 var storage = NewStorage()
 var task_stack TaskStack
-
-// функция, которая отправляет task в калькулятор
-/*func SendToCalculator(task Task) (float64, error) {
-	// Преобразуем задачу в JSON
-	requestBody, err := json.Marshal(task)
-	if err != nil {
-		return 0, errors.New("ошибка при создании JSON")
-	}
-	fmt.Println("task: ", task)
-	fmt.Println("----------------")
-
-	// Отправляем POST-запрос на сервер-калькулятор
-	resp, err := http.Post("http://localhost:8080/internal/task", "application/json", bytes.NewBuffer(requestBody))
-	if err != nil {
-		return 0, errors.New("ошибка при отправке запроса на сервер")
-	}
-	defer resp.Body.Close()
-
-	// Читаем ответ от сервера
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return 0, errors.New("ошибка при чтении ответа от сервера")
-	}
-
-	// Преобразуем ответ в структуру
-	var result struct {
-		Result float64 `json:"result"`
-	}
-	err = json.Unmarshal(body, &result)
-	if err != nil {
-		return 0, errors.New("ошибка при разборе ответа от сервера")
-	}
-
-	return result.Result, nil
-}*/
 
 // функция для определения приоритета оператора
 func precedence(op rune) int {
@@ -107,7 +71,7 @@ func TaskMaker(rpn string, expr_id string) (float64, error) {
 			operand2 := stack[len(stack)-1]
 			operand1 := stack[len(stack)-2]
 			stack = stack[:len(stack)-2]
-			fmt.Println(operand1, operand2, string(char))
+			// fmt.Println(operand1, operand2, string(char))
 
 			task := Task{
 				ID:     storage.MakeTaskID(),
@@ -121,7 +85,7 @@ func TaskMaker(rpn string, expr_id string) (float64, error) {
 
 			wait_id := task.ID
 			task_stack.AddTask(task)
-			fmt.Println(task.ID, "отправил в стек")
+			// fmt.Println(task.ID, "отправил в стек")
 
 			var res_task Task
 			for res_task.Status != "done" {
@@ -135,7 +99,7 @@ func TaskMaker(rpn string, expr_id string) (float64, error) {
 				}
 			}
 
-			fmt.Println(res_task.ID, "решена")
+			// fmt.Println(res_task.ID, "решена")
 
 			if res_task.Error != "" {
 				return 0, errors.New(res_task.Error)

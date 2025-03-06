@@ -112,7 +112,7 @@ func (s *Storage) MakeTaskID() string {
 
 // получаем время для операции
 func getOperationTime(op rune) int {
-	err := godotenv.Load("./internal/env/env_vars.env")
+	err := godotenv.Load("./env/env_vars.env")
 	if err != nil {
 		log.Fatalf("Ошибка при загрузке .env файла: %v", err)
 	}

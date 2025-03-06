@@ -59,7 +59,7 @@ func Calculate(ctx context.Context, a, b float64, operator string, oper_time int
 
 // хендлер для калькульятора. Доступен по ручке "/internal/calculator"
 func CalculatorHandler(w http.ResponseWriter, r *http.Request) {
-	err := godotenv.Load("./internal/env/env_vars.env")
+	err := godotenv.Load("./env/env_vars.env")
 	if err != nil {
 		log.Fatalf("Ошибка при загрузке .env файла: %v", err)
 	}
@@ -105,7 +105,7 @@ func CalculatorHandler(w http.ResponseWriter, r *http.Request) {
 			cancel()
 
 			// fmt.Println("ну вот насчитал", result)
-			fmt.Println(task.ID)
+			// fmt.Println(task.ID)
 			response = CalculationResponse{Result: result}
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(response)
@@ -119,7 +119,7 @@ func CalculatorHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		wg.Wait()
 
-		fmt.Println("отправляю оркестратору")
+		// fmt.Println("отправляю оркестратору")
 		calc_response, err := json.Marshal(response)
 		if err != nil {
 			fmt.Printf("JSON Marshal error:%s", err)
