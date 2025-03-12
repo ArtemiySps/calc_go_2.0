@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 	"sync"
 	"time"
@@ -99,10 +100,10 @@ func (o *Orkestrator) ChangeTask(id string, task models.Task) {
 	o.TaskStorage.mu.Lock()
 	defer o.TaskStorage.mu.Unlock()
 
-	if _, ok := o.TaskStorage.Tasks[id]; ok {
-		o.TaskStorage.Tasks[id] = task
-		return
-	}
+	o.log.Info(id + ": task info changed")
+
+	o.TaskStorage.Tasks[id] = task
+	fmt.Println(o.TaskStorage.Tasks)
 }
 
 func (o *Orkestrator) ChangeTaskStatus(id string, status string) {
@@ -119,12 +120,15 @@ func (o *Orkestrator) ChangeTaskStatus(id string, status string) {
 func (o *Orkestrator) AddTaskToStorage(task models.Task) {
 	o.TaskStorage.mu.Lock()
 	defer o.TaskStorage.mu.Unlock()
+
+	o.log.Info(task.ID + ": task added to storage")
 	o.TaskStorage.Tasks[task.ID] = task
 }
 
 func (o *Orkestrator) DeleteTaskFromStorage(id string) {
 	o.TaskStorage.mu.Lock()
 	defer o.TaskStorage.mu.Unlock()
+
 	delete(o.TaskStorage.Tasks, id)
 }
 
@@ -134,8 +138,11 @@ func (o *Orkestrator) GiveTask() (models.Task, error) {
 			if t.Status == models.StatusNeedToSend {
 				o.TaskStorage.mu.Lock()
 				defer o.TaskStorage.mu.Unlock()
+
 				t.Status = models.StatusPending
 				o.TaskStorage.Tasks[id] = t
+
+				o.log.Info(id + ": status changed to pending")
 				return t, nil
 			}
 		}
@@ -144,14 +151,23 @@ func (o *Orkestrator) GiveTask() (models.Task, error) {
 }
 
 func (o *Orkestrator) WaitForResult(id string) (float64, string) {
-	for {
+	ticker := time.NewTicker(time.Duration(1000) * time.Millisecond)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		o.TaskStorage.mu.Lock()
+		o.log.Info("--- check for update of my task")
 		for k, v := range o.TaskStorage.Tasks {
-			if k == id && v.Status != models.StatusPending {
+			if k == id && (v.Status == models.StatusCompleted || v.Status == models.StatusFailed) {
+				o.log.Info("delete from storage")
+				o.TaskStorage.mu.Unlock()
 				o.DeleteTaskFromStorage(id)
 				return v.Result, v.Error
 			}
 		}
+		o.TaskStorage.mu.Unlock()
 	}
+	return 0, "ticker stoped"
 }
 
 func (o *Orkestrator) ExpressionOperations(expr string) (float64, error) {
@@ -177,7 +193,7 @@ func (o *Orkestrator) ExpressionOperations(expr string) (float64, error) {
 
 			task := models.Task{
 				ID:     models.MakeID(),
-				Status: models.StatusPending,
+				Status: models.StatusNeedToSend,
 
 				Arg1:           operand1,
 				Arg2:           operand2,
@@ -186,6 +202,7 @@ func (o *Orkestrator) ExpressionOperations(expr string) (float64, error) {
 			}
 
 			o.AddTaskToStorage(task)
+			fmt.Println(o.TaskStorage.Tasks)
 
 			res, err := o.WaitForResult(task.ID)
 			if err != "" {
@@ -193,6 +210,7 @@ func (o *Orkestrator) ExpressionOperations(expr string) (float64, error) {
 				o.ChangeExpressionStatus(id, 0, false)
 				return 0, errors.New(err)
 			}
+			fmt.Println("result:", res)
 
 			stack = append(stack, res)
 		}

@@ -31,10 +31,10 @@ func NewConfig() (*Config, error) {
 	port := os.Getenv("PORT_ORKESTRATOR")
 
 	cfg := &Config{
-		AdditionTime:       time.Duration(additionTime) * time.Millisecond,
-		SubtractionTime:    time.Duration(substractionTime) * time.Millisecond,
-		MultiplicationTime: time.Duration(multiplicationTime) * time.Millisecond,
-		DivisionTime:       time.Duration(divisionTime) * time.Millisecond,
+		AdditionTime:       time.Duration(additionTime),
+		SubtractionTime:    time.Duration(substractionTime),
+		MultiplicationTime: time.Duration(multiplicationTime),
+		DivisionTime:       time.Duration(divisionTime),
 		OrkestratorPort:    port,
 	}
 

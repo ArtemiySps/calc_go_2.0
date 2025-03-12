@@ -29,40 +29,42 @@ func NewAgent(client *http.Client, cfg *config.Config, logger *zap.Logger) *Agen
 }
 
 // отправляет GET-запрос оркестратору для получения задачи
-func (a *Agent) GetTask() (*models.Task, error) {
+func (a *Agent) GetTask() (models.Task, error) {
 	a.log.Info("GET-request to orkestrator")
 
 	req, err := http.NewRequest("GET", "http://localhost:"+a.Config.OrkestratorPort+"/internal/task", nil)
 	if err != nil {
-		return nil, err
+		return models.Task{}, err
 	}
 
 	res, err := a.Client.Do(req)
 	if err != nil {
-		return nil, err
+		return models.Task{}, err
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
 		switch res.StatusCode {
 		case http.StatusNotFound:
-			return nil, models.ErrNoTasks
+			return models.Task{}, models.ErrNoTasks
 		default:
-			return nil, fmt.Errorf("ошибка при GET-запросе. Статус: %d", res.StatusCode)
+			return models.Task{}, fmt.Errorf("ошибка при GET-запросе. Статус: %d", res.StatusCode)
 		}
 	}
 
-	var task *models.Task
+	var task models.Task
 	err = json.NewDecoder(res.Body).Decode(&task)
 	if err != nil {
-		return nil, err
+		return models.Task{}, err
 	}
+
+	fmt.Println(task, "asdasd")
 
 	return task, nil
 }
 
 // воркер
-func (a *Agent) Calculate(ctx context.Context, task *models.Task, resultChan chan<- float64, errorChan chan<- error) {
+func (a *Agent) Calculate(ctx context.Context, task models.Task, resultChan chan<- float64, errorChan chan<- error) {
 	time.Sleep(time.Duration(task.Operation_time) * time.Millisecond)
 
 	select {
@@ -89,7 +91,7 @@ func (a *Agent) Calculate(ctx context.Context, task *models.Task, resultChan cha
 }
 
 // отправляет POST-запрос со структурой Task, где уже заполнено поле Result/Error
-func (a *Agent) PostResult(task *models.Task) error {
+func (a *Agent) PostResult(task models.Task) error {
 	data, err := json.Marshal(task)
 	if err != nil {
 		return nil
@@ -116,8 +118,7 @@ func (a *Agent) Run() error {
 	ticker := time.NewTicker(a.Config.GetTaskInterval)
 	defer ticker.Stop()
 
-	var ctx context.Context
-	var wg sync.WaitGroup
+	wg := &sync.WaitGroup{}
 	resultChan := make(chan float64, 1)
 	errorChan := make(chan error, 1)
 
@@ -133,21 +134,30 @@ func (a *Agent) Run() error {
 			}
 		}
 
+		ctx, cancel := context.WithCancel(context.Background())
+
 		wg.Add(a.Config.ComputingPower)
 		go func() {
 			defer wg.Done()
 
 			for range a.Config.ComputingPower {
-				a.Calculate(ctx, task, resultChan, errorChan)
+				go a.Calculate(ctx, task, resultChan, errorChan)
 			}
 		}()
 
 		select {
 		case res := <-resultChan:
+			cancel()
+			task.Status = models.StatusCompleted
 			task.Result = res
 		case err := <-errorChan:
+			cancel()
+			task.Status = models.StatusFailed
 			task.Error = err.Error()
 		}
+		wg.Wait()
+
+		fmt.Println(task)
 
 		if err := a.PostResult(task); err != nil {
 			return err

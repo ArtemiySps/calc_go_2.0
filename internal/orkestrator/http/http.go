@@ -2,6 +2,7 @@ package http
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/ArtemiySps/calc_go_2.0/pkg/models"
@@ -53,6 +54,7 @@ func (t *TransportHttp) OrkestratorHandler(w http.ResponseWriter, r *http.Reques
 
 	res, err := t.s.ExpressionOperations(request.Expression)
 	if err != nil {
+		t.log.Error(err.Error())
 		switch err {
 		case models.ErrBadExpression:
 			http.Error(w, err.Error(), http.StatusUnprocessableEntity)
@@ -66,6 +68,7 @@ func (t *TransportHttp) OrkestratorHandler(w http.ResponseWriter, r *http.Reques
 		"result": res,
 	})
 	if err != nil {
+		t.log.Error(err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -73,44 +76,55 @@ func (t *TransportHttp) OrkestratorHandler(w http.ResponseWriter, r *http.Reques
 	w.WriteHeader(http.StatusCreated)
 	_, err = w.Write(data)
 	if err != nil {
+		t.log.Error(err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 }
 
 func (t *TransportHttp) GiveTaskHandler(w http.ResponseWriter, r *http.Request) {
+	t.log.Info("Ready to give task")
+
 	task, err := t.s.GiveTask()
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
-	data, err := json.Marshal(struct {
-		Task models.Task `json:"task"`
-	}{
-		Task: task,
-	})
+	fmt.Println(task, "jkljkljkl")
+
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(task)
+	// data, err := json.Marshal(struct {
+	// 	Task models.Task `json:"task"`
+	// }{
+	// 	Task: task,
+	// })
 	if err != nil {
+		t.log.Error(err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	_, err = w.Write(data)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	// _, err = w.Write(data)
+	// if err != nil {
+	// 	t.log.Error(err.Error())
+	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
+	// 	return
+	// }
 	t.log.Info("Gave task " + task.ID)
 }
 
 func (t *TransportHttp) GetResultHandler(w http.ResponseWriter, r *http.Request) {
+	t.log.Info("Ready to get result")
+
 	defer r.Body.Close()
 
 	var result models.Task
 
 	err := json.NewDecoder(r.Body).Decode(&result)
 	if err != nil {
+		t.log.Error(err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
