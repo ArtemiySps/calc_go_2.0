@@ -174,7 +174,10 @@ func (o *Orkestrator) ExpressionOperations(expr string) (float64, error) {
 	id := o.AddExpressionToStorage()
 	o.log.Info(id + ": added to storage")
 
-	expr_rpn := models.InfixToPostfix(expr)
+	expr_rpn, err := models.InfixToPostfix(expr)
+	if err != nil {
+		return 0, err
+	}
 	o.log.Info(id + ": modified to postfix")
 
 	var stack []float64

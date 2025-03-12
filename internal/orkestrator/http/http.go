@@ -58,6 +58,8 @@ func (t *TransportHttp) OrkestratorHandler(w http.ResponseWriter, r *http.Reques
 		switch err {
 		case models.ErrBadExpression:
 			http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+		case models.ErrUnexpectedSymbol:
+			http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		default:
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}

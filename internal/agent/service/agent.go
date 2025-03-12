@@ -118,10 +118,6 @@ func (a *Agent) Run() error {
 	ticker := time.NewTicker(a.Config.GetTaskInterval)
 	defer ticker.Stop()
 
-	wg := &sync.WaitGroup{}
-	resultChan := make(chan float64, 1)
-	errorChan := make(chan error, 1)
-
 	a.log.Info("ticker for GET-requests started")
 	for range ticker.C {
 		task, err := a.GetTask()
@@ -135,6 +131,9 @@ func (a *Agent) Run() error {
 		}
 
 		ctx, cancel := context.WithCancel(context.Background())
+		wg := &sync.WaitGroup{}
+		resultChan := make(chan float64, 1)
+		errorChan := make(chan error, 1)
 
 		wg.Add(a.Config.ComputingPower)
 		go func() {
