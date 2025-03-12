@@ -1,4 +1,4 @@
-package orkestrator
+package models
 
 import (
 	"errors"
@@ -12,5 +12,6 @@ var (
 	// ошибки таскмейкера
 	ErrBadExpression = errors.New("некоректное выражение")
 
-	// ошибка
+	//ошибки http
+	ErrNoTasks = errors.New("нет доступных задач")
 )
