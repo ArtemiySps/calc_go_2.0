@@ -21,7 +21,7 @@ func precedence(op rune) int {
 }
 
 // функция для преобразования выражения в постфиксную запись (обратная польская запись)
-func InfixToPostfix(expression string) string {
+func InfixToPostfix(expression string) (string, error) {
 	var stack []rune
 	var output strings.Builder
 
@@ -36,12 +36,14 @@ func InfixToPostfix(expression string) string {
 				stack = stack[:len(stack)-1]
 			}
 			stack = stack[:len(stack)-1]
-		} else {
+		} else if char == '+' || char == '-' || char == '*' || char == '/' {
 			for len(stack) > 0 && precedence(stack[len(stack)-1]) >= precedence(char) {
 				output.WriteRune(stack[len(stack)-1])
 				stack = stack[:len(stack)-1]
 			}
 			stack = append(stack, char)
+		} else {
+			return "", ErrUnexpectedSymbol
 		}
 	}
 
@@ -50,7 +52,7 @@ func InfixToPostfix(expression string) string {
 		stack = stack[:len(stack)-1]
 	}
 
-	return output.String()
+	return output.String(), nil
 }
 
 // функция для создания ID
