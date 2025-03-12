@@ -30,6 +30,8 @@ func NewAgent(client *http.Client, cfg *config.Config, logger *zap.Logger) *Agen
 
 // отправляет GET-запрос оркестратору для получения задачи
 func (a *Agent) GetTask() (*models.Task, error) {
+	a.log.Info("GET-request to orkestrator")
+
 	req, err := http.NewRequest("GET", "http://localhost:"+a.Config.OrkestratorPort+"/internal/task", nil)
 	if err != nil {
 		return nil, err
@@ -119,6 +121,7 @@ func (a *Agent) Run() error {
 	resultChan := make(chan float64, 1)
 	errorChan := make(chan error, 1)
 
+	a.log.Info("ticker for GET-requests started")
 	for range ticker.C {
 		task, err := a.GetTask()
 		if err != nil {
@@ -157,11 +160,11 @@ func (a *Agent) Run() error {
 func (a *Agent) RunServer() error {
 	a.log.Info("Server (agent) starting on port " + a.Config.AgentPort)
 
-	http.ListenAndServe(":"+a.Config.AgentPort, nil)
-
 	if err := a.Run(); err != nil {
 		return err
 	}
+
+	http.ListenAndServe(":"+a.Config.AgentPort, nil)
 	return nil
 }
 

@@ -11,12 +11,6 @@ import (
 	"go.uber.org/zap"
 )
 
-const (
-	StatusPending   = "pending"
-	StatusCompleted = "completed"
-	StatusFailed    = "failed"
-)
-
 type TaskStorage struct {
 	mu    sync.Mutex
 	Tasks map[string]models.Task
@@ -76,7 +70,7 @@ func (o *Orkestrator) GetOperationTime(op rune) time.Duration {
 func (o *Orkestrator) AddExpressionToStorage() string {
 	expression := models.Expression{
 		ID:     models.MakeID(),
-		Status: StatusPending,
+		Status: models.StatusPending,
 		Result: 0,
 	}
 
@@ -90,14 +84,35 @@ func (o *Orkestrator) ChangeExpressionStatus(id string, res float64, ok bool) {
 	defer o.ExpressionStorage.mu.Unlock()
 	if ok {
 		if entry, okk := o.ExpressionStorage.Expressions[id]; okk {
-			entry.Status = StatusCompleted
+			entry.Status = models.StatusCompleted
 			entry.Result = res
 			o.ExpressionStorage.Expressions[id] = entry
 			return
 		}
 	}
 	if entry, okk := o.ExpressionStorage.Expressions[id]; okk {
-		entry.Status = StatusFailed
+		entry.Status = models.StatusFailed
+	}
+}
+
+func (o *Orkestrator) ChangeTask(id string, task models.Task) {
+	o.TaskStorage.mu.Lock()
+	defer o.TaskStorage.mu.Unlock()
+
+	if _, ok := o.TaskStorage.Tasks[id]; ok {
+		o.TaskStorage.Tasks[id] = task
+		return
+	}
+}
+
+func (o *Orkestrator) ChangeTaskStatus(id string, status string) {
+	o.TaskStorage.mu.Lock()
+	defer o.TaskStorage.mu.Unlock()
+
+	if entry, ok := o.TaskStorage.Tasks[id]; ok {
+		entry.Status = status
+		o.TaskStorage.Tasks[id] = entry
+		return
 	}
 }
 
@@ -113,10 +128,25 @@ func (o *Orkestrator) DeleteTaskFromStorage(id string) {
 	delete(o.TaskStorage.Tasks, id)
 }
 
+func (o *Orkestrator) GiveTask() (models.Task, error) {
+	if len(o.TaskStorage.Tasks) > 0 {
+		for id, t := range o.TaskStorage.Tasks {
+			if t.Status == models.StatusNeedToSend {
+				o.TaskStorage.mu.Lock()
+				defer o.TaskStorage.mu.Unlock()
+				t.Status = models.StatusPending
+				o.TaskStorage.Tasks[id] = t
+				return t, nil
+			}
+		}
+	}
+	return models.Task{}, models.ErrNoTasks
+}
+
 func (o *Orkestrator) WaitForResult(id string) (float64, string) {
 	for {
 		for k, v := range o.TaskStorage.Tasks {
-			if k == id && v.Status != StatusPending {
+			if k == id && v.Status != models.StatusPending {
 				o.DeleteTaskFromStorage(id)
 				return v.Result, v.Error
 			}
@@ -147,7 +177,7 @@ func (o *Orkestrator) ExpressionOperations(expr string) (float64, error) {
 
 			task := models.Task{
 				ID:     models.MakeID(),
-				Status: StatusPending,
+				Status: models.StatusPending,
 
 				Arg1:           operand1,
 				Arg2:           operand2,

@@ -1,5 +1,13 @@
 package models
 
+const (
+	StatusPending   = "pending"
+	StatusCompleted = "completed"
+	StatusFailed    = "failed"
+
+	StatusNeedToSend = "need to send"
+)
+
 // структура для состояния выражения
 type Expression struct {
 	ID     string  `json:"id"`

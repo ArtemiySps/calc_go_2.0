@@ -10,6 +10,8 @@ import (
 
 type Service interface {
 	ExpressionOperations(expr string) (float64, error)
+	GiveTask() (models.Task, error)
+	ChangeTask(id string, task models.Task)
 }
 
 type TransportHttp struct {
@@ -26,6 +28,14 @@ func NewTransportHttp(s Service, port string, logger *zap.Logger) *TransportHttp
 	}
 
 	http.HandleFunc("/api/v1/calculate", t.OrkestratorHandler)
+	http.HandleFunc("/internal/task", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			t.GiveTaskHandler(w, r)
+		case http.MethodPost:
+			t.GetResultHandler(w, r)
+		}
+	})
 
 	return t
 }
@@ -66,6 +76,47 @@ func (t *TransportHttp) OrkestratorHandler(w http.ResponseWriter, r *http.Reques
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+}
+
+func (t *TransportHttp) GiveTaskHandler(w http.ResponseWriter, r *http.Request) {
+	task, err := t.s.GiveTask()
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	data, err := json.Marshal(struct {
+		Task models.Task `json:"task"`
+	}{
+		Task: task,
+	})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_, err = w.Write(data)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	t.log.Info("Gave task " + task.ID)
+}
+
+func (t *TransportHttp) GetResultHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
+	var result models.Task
+
+	err := json.NewDecoder(r.Body).Decode(&result)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	t.s.ChangeTask(result.ID, result)
+	t.log.Info("Got result for task " + result.ID)
 }
 
 func (t *TransportHttp) RunServer() {
