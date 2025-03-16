@@ -80,6 +80,20 @@ func (o *Orkestrator) AddExpressionToStorage() string {
 	return expression.ID
 }
 
+func (o *Orkestrator) GetAllExpressions() map[string]models.Expression {
+	o.ExpressionStorage.mu.Lock()
+	defer o.ExpressionStorage.mu.Unlock()
+	expressions := o.ExpressionStorage.Expressions
+	return expressions
+}
+
+func (o *Orkestrator) GetExpression(id string) models.Expression {
+	o.ExpressionStorage.mu.Lock()
+	defer o.ExpressionStorage.mu.Unlock()
+	expression := o.ExpressionStorage.Expressions[id]
+	return expression
+}
+
 func (o *Orkestrator) ChangeExpressionStatus(id string, res float64, ok bool) {
 	o.ExpressionStorage.mu.Lock()
 	defer o.ExpressionStorage.mu.Unlock()

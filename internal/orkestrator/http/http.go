@@ -13,6 +13,8 @@ type Service interface {
 	ExpressionOperations(expr string) (float64, error)
 	GiveTask() (models.Task, error)
 	ChangeTask(id string, task models.Task)
+	GetAllExpressions() map[string]models.Expression
+	GetExpression(id string) models.Expression
 }
 
 type TransportHttp struct {
@@ -29,6 +31,8 @@ func NewTransportHttp(s Service, port string, logger *zap.Logger) *TransportHttp
 	}
 
 	http.HandleFunc("/api/v1/calculate", t.OrkestratorHandler)
+	http.HandleFunc("/api/v1/expressions", t.GetAllExpressionsHandler)
+	http.HandleFunc("/api/v1/expression/", t.GetExpressionHandler)
 	http.HandleFunc("/internal/task", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
@@ -133,6 +137,30 @@ func (t *TransportHttp) GetResultHandler(w http.ResponseWriter, r *http.Request)
 
 	t.s.ChangeTask(result.ID, result)
 	t.log.Info("Got result for task " + result.ID)
+}
+
+func (t *TransportHttp) GetAllExpressionsHandler(w http.ResponseWriter, r *http.Request) {
+	expressions := t.s.GetAllExpressions()
+	response := struct {
+		Exprs map[string]models.Expression `json:"expressions"`
+	}{
+		Exprs: expressions,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+func (t *TransportHttp) GetExpressionHandler(w http.ResponseWriter, r *http.Request) {
+	expression := t.s.GetExpression(r.URL.Path[len("/api/v1/expression/"):])
+	response := struct {
+		Exprs models.Expression `json:"expression"`
+	}{
+		Exprs: expression,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
 }
 
 func (t *TransportHttp) RunServer() {
