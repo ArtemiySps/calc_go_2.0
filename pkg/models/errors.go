@@ -8,9 +8,7 @@ var (
 	// ошибки в математическом выражении:
 	ErrDivisionByZero   = errors.New("деление на ноль")
 	ErrUnexpectedSymbol = errors.New("некорректный символ")
-
-	// ошибки таскмейкера
-	ErrBadExpression = errors.New("некоректное выражение")
+	ErrBadExpression    = errors.New("некорректное выражение")
 
 	//ошибки http
 	ErrNoTasks = errors.New("нет доступных задач")

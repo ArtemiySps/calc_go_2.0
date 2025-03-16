@@ -44,6 +44,33 @@ curl -X http://localhost:8081/api/v1/expressions
 curl -X http://localhost:8081/api/v1/expression/(любой ID, полученный из expressions)
 ```
 
+## Примеры запросов
+```
+curl -X POST http://localhost:8081/api/v1/calculate -H "Content-Type:application/json" -d "{\"expression\":\"1+2+3\"}"
+```
+Результат: 6
+
+```
+curl -X POST http://localhost:8081/api/v1/calculate -H "Content-Type:application/json" -d "{\"expression\":\"1*2+(3+4-5+(6/2))\"}"
+```
+Результат: 1
+
+```
+curl -X POST http://localhost:8081/api/v1/calculate -H "Content-Type:application/json" -d "{\"expression\":\"1+2/0\"}"
+```
+Результат: деление на ноль
+
+```
+curl -X POST http://localhost:8081/api/v1/calculate -H "Content-Type:application/json" -d "{\"expression\":\"1+2+a\"}"
+```
+Результат: некорректный символ
+
+```
+curl -X POST http://localhost:8081/api/v1/calculate -H "Content-Type:application/json" -d "{\"expression\":\"1++2\"}"
+```
+Результат: некорректное выражение
+
+
 ## Принцип работы
 
 В калькуляторе взаимодействуют пользователь, оркестратор и агент.
@@ -131,9 +158,3 @@ COMPUTING_POWER=3              //количество запускаемых в�
 
 PORT_ORKESTRATOR=8081		   //порт сервера оркестратора
 PORT_AGENT=8080				   //порт сервера агента
-<<<<<<< HEAD
-```
-=======
-```
-
->>>>>>> c451dcb345775a912bc244d21d24afd86adbda30

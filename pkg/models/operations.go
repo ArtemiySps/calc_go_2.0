@@ -60,6 +60,7 @@ func MakeID() string {
 	return uuid.New().String()
 }
 
+// функция создания zap.Logger
 func MakeLogger() *zap.Logger {
 	logger, _ := zap.NewDevelopment()
 	return logger
